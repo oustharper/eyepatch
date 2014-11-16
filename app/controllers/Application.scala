@@ -44,6 +44,12 @@ object Application extends Controller {
     }
   }
 
+  def show(seriesId: String) = Action.async {
+    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { show =>
+      Ok(views.html.show(show.get))
+    }
+  }
+
   def showsearch = Action {
     Ok(views.html.search(searchForm, Seq.empty))
   }

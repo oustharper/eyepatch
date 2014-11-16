@@ -1,5 +1,6 @@
 package importer.models
 
+import org.joda.time.LocalDate
 import scala.collection.immutable
 
 case class SeriesID(id: Long)
@@ -17,11 +18,13 @@ case class TvEpisode(
   episodeId: EpisodeID,
   episodeName: String,
   episodeNumber: Int,
-  seasonNumber: Int
+  seasonNumber: Int,
+  airDate: LocalDate
 )
 
 case class TvSeason(
-  episodes: immutable.IndexedSeq[TvEpisode]
+  seasonNumber: Int,
+  episodes: immutable.Seq[TvEpisode]
 )
 
 case class TvSeries(
@@ -29,7 +32,7 @@ case class TvSeries(
   seriesName: String,
   description: String,
   banner: String,
-  seasons: immutable.IndexedSeq[TvSeason]
+  seasons: immutable.Seq[TvSeason]
 )
 
 

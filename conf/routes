@@ -5,6 +5,7 @@
 # Home page
 GET     /                           controllers.Application.shows
 GET     /shows                      controllers.Application.shows
+GET     /show/*show                 controllers.Application.show(show)
 GET     /showsearch                 controllers.Application.showsearch
 POST    /addshow                    controllers.Application.addshow
 POST    /showsearch                 controllers.Application.showsearchresults

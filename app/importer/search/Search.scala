@@ -3,10 +3,12 @@ package importer.search
 import java.io.{FileOutputStream, File}
 import java.util.zip.ZipFile
 import importer.models._
+import org.joda.time.LocalDate
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee._
 import play.api.libs.ws._
+import scala.collection.immutable
 import scala.concurrent.Future
 import scala.xml.XML
 
@@ -70,25 +72,32 @@ object Search {
               episodeNumber: String = (episode \\ "EpisodeNumber").text
               seasonNumber: String = (episode \\ "SeasonNumber").text
               episodeName: String = (episode \\ "EpisodeName").text
+              localDateString: String = (episode \\ "FirstAired").text
+              localDate: LocalDate = {
+                val dateArray = localDateString.split("-")
+                  new LocalDate(dateArray(0).toInt, dateArray(1).toInt, dateArray(2).toInt)
+              }
             } yield {
               TvEpisode(
                 episodeId = EpisodeID(id = episodeId.toLong),
                 episodeName = episodeName,
                 episodeNumber = episodeNumber.toInt,
-                seasonNumber = seasonNumber.toInt
+                seasonNumber = seasonNumber.toInt,
+                airDate = localDate
               )
             }
 
-            val seasons = episodes.groupBy(_.seasonNumber) map {
-              case (season, episodes) => TvSeason(episodes = episodes.toIndexedSeq)
-            }
+            val seasons: immutable.Seq[TvSeason] = immutable.Seq.empty ++
+              episodes.groupBy(_.seasonNumber) map {
+                case (seasonNumber, episodes) => TvSeason(seasonNumber = seasonNumber, episodes = episodes)
+              }
 
             TvSeries(
               seriesId = SeriesID(seriesIDString.toLong),
               seriesName = seriesName,
               description = description,
               banner = s"http://thetvdb.com/banners/$banner",
-              seasons = seasons.toIndexedSeq
+              seasons = seasons.sortBy(_.seasonNumber)
             )
           }).headOption
         }

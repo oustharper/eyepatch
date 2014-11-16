@@ -3,17 +3,9 @@
 @(shows: List[TvSeries])
 
 @main("Eyepatch") {
-    <table class="table table-striped">
         @for(show <- shows) {
-            <tr><td>
-                <div class="media">
-                    <div class="media-body">
-                        <h4 class="media-heading">@show.seriesName</h4>
-                        @show.description
-                        Seasons: @show.seasons.size
-                    </div>
-                </div>
-            </td></tr>
+            <a href="@routes.Application.show(show.seriesId.id.toString)">
+                <h4>@show.seriesName</h4>
+            </a>
         }
-    </table>
 }
