@@ -3,8 +3,11 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
-GET     /tvshow                     controllers.Application.tvshow
+GET     /                           controllers.Application.shows
+GET     /shows                      controllers.Application.shows
+GET     /showsearch                 controllers.Application.showsearch
+POST    /addshow                    controllers.Application.addshow
+POST    /showsearch                 controllers.Application.showsearchresults
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

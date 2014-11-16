@@ -1,0 +1,27 @@
+@import importer.models.TvSearchResult
+
+@(searchForm: Form[SearchRequest], results: Seq[TvSearchResult])
+
+@main("Search") {
+    @helper.form(action = routes.Application.showsearchresults()) {
+        @helper.inputText(searchForm("query"))
+        <input type="submit" value="Search">
+    }
+
+    <table class="table table-striped">
+        @for(result <- results) {
+            <tr><td>
+                <div class="media">
+                    <div class="media-body">
+                        <h4 class="media-heading">@result.seriesName</h4>
+                        @result.description
+                    </div>
+                    @helper.form(action = routes.Application.addshow()) {
+                        <button name="show_to_add" value="@result.seriesId.id" type="submit" class="btn btn-primary btn-lg btn-block">Add @result.seriesName</button>
+                    }
+
+                </div>
+            </td></tr>
+        }
+    </table>
+}

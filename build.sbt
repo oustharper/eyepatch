@@ -10,6 +10,5 @@ libraryDependencies ++= Seq(
   jdbc,
   anorm,
   cache,
-  ws,
-  "org.codehaus.woodstox" % "wstx-asl" % "4.0.6"
+  ws
 )
