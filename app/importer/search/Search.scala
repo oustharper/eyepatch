@@ -2,7 +2,7 @@ package importer.search
 
 import java.io.{FileOutputStream, File}
 import java.util.zip.ZipFile
-import importer.models.{SeriesID, TvSearchResult, TvSeries}
+import importer.models._
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee._
@@ -38,7 +38,6 @@ object Search {
 
   def getSeriesInfo(seriesId: SeriesID): Future[Option[TvSeries]] = {
     val seriesIdString = seriesId.id.toString
-    println(s"$SERIES_INFO_ENDPOINT/$seriesIdString/all/en.zip")
     WS.url(s"$SERIES_INFO_ENDPOINT/$seriesIdString/all/en.zip").getStream() flatMap {
       case (headers, body) =>
         val targetFile = File.createTempFile(seriesId.id.toString, ".zip")
@@ -56,22 +55,40 @@ object Search {
         }.map(_ => targetFile)
 
         completedFileFuture map { completedFile =>
-          println(completedFile.getAbsolutePath)
           val seriesInfoZipFile = new ZipFile(completedFile)
           val xml = XML.load(seriesInfoZipFile.getInputStream(seriesInfoZipFile.getEntry("en.xml")))
-          println(xml \\ "Series")
           (for {
             series <- xml \\ "Series"
+            seriesIDString: String = (series \\ "id").text
+            seriesName: String = (series \\ "SeriesName").text
+            description: String = (series \\ "Overview").text
+            banner: String = (series \\ "banner").text
           } yield {
-            val seriesIDString: String = (series \\ "id").text
-            val seriesName: String = (series \\ "SeriesName").text
-            val description: String = (series \\ "Overview").text
-            val banner: String = (series \\ "banner").text
+            val episodes = for {
+              episode <- xml \\ "Episode"
+              episodeId: String = (episode \\ "id").text
+              episodeNumber: String = (episode \\ "EpisodeNumber").text
+              seasonNumber: String = (episode \\ "SeasonNumber").text
+              episodeName: String = (episode \\ "EpisodeName").text
+            } yield {
+              TvEpisode(
+                episodeId = EpisodeID(id = episodeId.toLong),
+                episodeName = episodeName,
+                episodeNumber = episodeNumber.toInt,
+                seasonNumber = seasonNumber.toInt
+              )
+            }
+
+            val seasons = episodes.groupBy(_.seasonNumber) map {
+              case (season, episodes) => TvSeason(episodes = episodes.toIndexedSeq)
+            }
+
             TvSeries(
               seriesId = SeriesID(seriesIDString.toLong),
               seriesName = seriesName,
               description = description,
-              banner = s"http://thetvdb.com/banners/$banner"
+              banner = s"http://thetvdb.com/banners/$banner",
+              seasons = seasons.toIndexedSeq
             )
           }).headOption
         }
