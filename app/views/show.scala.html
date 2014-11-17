@@ -1,0 +1,35 @@
+@import importer.models.TvSeries
+
+@(show: TvSeries)
+
+@main("Eyepatch") {
+    <div class="media">
+        <a class="media-top" href="#">
+            <img src="@show.banner">
+        </a>
+        <div class="media-body">
+            <h1 class="media-heading">@show.seriesName</h1>
+            <h5>@show.description</h5>
+
+                @for(season <- show.seasons.reverse) {
+                    <table class="table">
+                        <tr>
+                            <td>
+                                <h4>Season @season.seasonNumber</h4>
+                                <table class ="table">
+                                @for(episode <- season.episodes.reverse) {
+                                    <tr>
+                                        <td>@episode.episodeNumber</td>
+                                        <td>@episode.episodeName</td>
+                                        <td>@episode.airDate.toString</td>
+                                    </tr>
+                                }
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                }
+
+        </div>
+    </div>
+}
