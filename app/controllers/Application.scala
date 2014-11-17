@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 case class SearchRequest(query: String)
 
-case class ShowToAdd(seriesID: SeriesID)
+case class ShowToAdd(seriesID: SeriesID, baseDir: String)
 
 object Application extends Controller {
 
@@ -26,8 +26,14 @@ object Application extends Controller {
 
   val addForm = Form(
     mapping(
-      "show_to_add" -> nonEmptyText
-    )(seriesIDAsString => ShowToAdd(SeriesID(seriesIDAsString.toLong)))(showToAdd => Some(showToAdd.seriesID.toString))
+      "show_to_add" -> longNumber,
+      "base_dir" -> nonEmptyText
+    ) { case formContent: (Long, String) =>
+      val (seriesIdAsLong, baseDir) = formContent
+      ShowToAdd(SeriesID(seriesIdAsLong), baseDir)
+    } { showToAdd: ShowToAdd =>
+      ShowToAdd.unapply(showToAdd).map(tuple => (tuple._1.id, tuple._2))
+    }
   )
 
   def shows = Action.async {
@@ -41,6 +47,12 @@ object Application extends Controller {
       Future.sequence(seriesFutures) map { series =>
         Ok(views.html.shows(series.flatten.toList))
       }
+    }
+  }
+
+  def show(seriesId: String) = Action.async {
+    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { show =>
+      Ok(views.html.show(show.get))
     }
   }
 
@@ -63,29 +75,16 @@ object Application extends Controller {
     )
   }
 
-  def addshow = Action.async { implicit request =>
-    addForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future {
-          BadRequest(views.html.shows(List.empty))
-        }
-      },
-      showToAdd => {
-        DB.withConnection { implicit conn =>
-          SQL("insert into Shows(seriesId) values ({seriesId})")
-            .on('seriesId -> showToAdd.seriesID.id).executeInsert()
-          val ids: List[Long] = SQL("Select * from Shows")().map(row => row[Long]("seriesId")).toList
-
-          val seriesFutures = ids map { id =>
-            Search.getSeriesInfo(SeriesID(id = id))
-          }
-
-          Future.sequence(seriesFutures) map { series =>
-            Ok(views.html.shows(series.flatten.toList))
-          }
-        }
-      }
-    )
+  def addshow(seriesId: String) = Action.async {
+    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { show =>
+      Ok(views.html.addshow(show.get))
+    }
   }
 
+  def javascriptRoutes = Action { implicit request =>
+    Ok(
+      Routes.javascriptRouter("jsRoutes")(
+      )
+    ).as("text/javascript")
+  }
 }

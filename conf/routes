@@ -5,9 +5,11 @@
 # Home page
 GET     /                           controllers.Application.shows
 GET     /shows                      controllers.Application.shows
+GET     /show/*show                 controllers.Application.show(show)
 GET     /showsearch                 controllers.Application.showsearch
-POST    /addshow                    controllers.Application.addshow
+GET     /addshow/*show              controllers.Application.addshow(show)
 POST    /showsearch                 controllers.Application.showsearchresults
+GET     /javascriptRoutes           controllers.Application.javascriptRoutes
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
