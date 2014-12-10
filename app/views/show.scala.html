@@ -1,35 +1,25 @@
-@import importer.models.TvSeries
+@import models.{ShowSummary, EpisodeSummary, SeasonSummary}
 
-@(show: TvSeries)
+@(seriesSummary: ShowSummary, seasons: Seq[SeasonSummary])
 
 @main("Eyepatch") {
-    <div class="media">
-        <a class="media-top" href="#">
-            <img src="@show.banner">
-        </a>
-        <div class="media-body">
-            <h1 class="media-heading">@show.seriesName</h1>
-            <h5>@show.description</h5>
-
-                @for(season <- show.seasons.reverse) {
-                    <table class="table">
+    <h1>@seriesSummary.seriesName</h1>
+    @for(season <- seasons.reverse) {
+        <table class="table">
+            <tr>
+                <td>
+                    <h4>Season @season.seasonNumber</h4>
+                    <table class ="table table-striped">
+                    @for(episode <- season.episodes.reverse) {
                         <tr>
-                            <td>
-                                <h4>Season @season.seasonNumber</h4>
-                                <table class ="table">
-                                @for(episode <- season.episodes.reverse) {
-                                    <tr>
-                                        <td>@episode.episodeNumber</td>
-                                        <td>@episode.episodeName</td>
-                                        <td>@episode.airDate.toString</td>
-                                    </tr>
-                                }
-                                </table>
-                            </td>
+                            <td>@episode.map(_.episodeNumber).getOrElse("UNKNOWN")</td>
+                            <td>@episode.map(_.episodeName).getOrElse("UNKNOWN")</td>
+                            <td>@episode.map(_.airDate).getOrElse("UNKNOWN")</td>
                         </tr>
+                    }
                     </table>
-                }
-
-        </div>
-    </div>
+                </td>
+            </tr>
+        </table>
+    }
 }

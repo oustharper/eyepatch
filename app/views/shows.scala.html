@@ -1,11 +1,44 @@
-@import importer.models.TvSeries
+@import models.SeriesStatusSummary
 
-@(shows: List[TvSeries])
+@(shows: Seq[SeriesStatusSummary])
 
 @main("Eyepatch") {
-        @for(show <- shows) {
-            <a href="@routes.Application.show(show.seriesId.id.toString)">
-                <h4>@show.seriesName</h4>
-            </a>
-        }
+    <table class="table table-striped table-hover" data-provides="rowlink">
+        <thead>
+            <tr>
+                <th>Series Name</th>
+                <th>Continuing?</th>
+                <th>Downloaded</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(show <- shows) {
+                <tr>
+                    <td>
+                        <a href="@routes.Application.show(show.seriesSummary.seriesID.id.toString)">
+                            @show.seriesSummary.seriesName
+                        </a>
+                    </td>
+                    <td>
+                        @if(show.seriesSummary.isActive.isEmpty) {
+                            <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+                        } else {
+                            @if(show.seriesSummary.isActive.get) {
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                            } else {
+                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            }
+                        }
+                    </td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" aria-valuenow="@show.downloadedEpisodes" aria-valuemin="0" aria-valuemax="@show.totalEpisodes" style="width: @{show.downloadedEpisodes.toDouble/show.totalEpisodes*100}%">
+                                @show.downloadedEpisodes / @show.totalEpisodes
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }

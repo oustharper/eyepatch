@@ -2,7 +2,7 @@ package controllers
 
 import anorm._
 import importer.search.Search
-import importer.models.{SeriesID, TvSearchResult}
+import models._
 import play.api._
 import play.api.db._
 import play.api.data._
@@ -11,6 +11,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import play.api.Play.current
 import scala.concurrent.Future
+import scala.util.Random
 
 case class SearchRequest(query: String)
 
@@ -38,21 +39,27 @@ object Application extends Controller {
 
   def shows = Action.async {
     DB.withConnection { implicit conn =>
-      val ids: List[Long] = SQL("Select * from Shows")().map(row => row[Long]("seriesId")).toList
+      val ids: List[Long] = SQL("SELECT * FROM Shows")().map(row => row[Long]("seriesId")).toList
 
       val seriesFutures = ids map { id =>
         Search.getSeriesInfo(SeriesID(id = id))
       }
 
       Future.sequence(seriesFutures) map { series =>
-        Ok(views.html.shows(series.flatten.toList))
+        val seriesList = series.flatten.map(SeriesStatusSummary.fromTvSeries)
+        Ok(views.html.shows(seriesList))
       }
     }
   }
 
   def show(seriesId: String) = Action.async {
-    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { show =>
-      Ok(views.html.show(show.get))
+    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { showOption =>
+      val (seriesSummary, seasonSummaries) = (showOption map { show =>
+        val seriesSummary = SeriesSummary.fromTvSeries(show).get
+        val seasonSummaries = show.seasons.flatMap(SeasonSummary.fromTvSeason)
+        (seriesSummary, seasonSummaries)
+      }).get
+      Ok(views.html.show(seriesSummary, seasonSummaries))
     }
   }
 
@@ -76,8 +83,15 @@ object Application extends Controller {
   }
 
   def addshow(seriesId: String) = Action.async {
-    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { show =>
-      Ok(views.html.addshow(show.get))
+    Search.getSeriesInfo(SeriesID(id = seriesId.toLong)) map { showOption =>
+      showOption map { show =>
+        DB.withConnection { implicit conn =>
+          SQL("INSERT INTO Shows(seriesId, seriesName) values({seriesId}, {seriesName})")
+            .on('seriesId -> show.seriesId.id, 'seriesName -> show.seriesName)
+            .executeInsert()
+        }
+      }
+      Redirect("/")
     }
   }
 

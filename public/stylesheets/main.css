@@ -1,0 +1,5 @@
+.progress-bar {
+    overflow-x:visible;
+    white-space:nowrap;
+    min-width: 40px;
+}

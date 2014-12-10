@@ -3,7 +3,8 @@
 # --- !Ups
 
 CREATE TABLE Shows (
-    seriesId long NOT NULL AUTO_INCREMENT,
+    seriesId long NOT NULL,
+    seriesName varchar,
     PRIMARY KEY (seriesId)
 );
 

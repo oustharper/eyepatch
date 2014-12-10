@@ -2,7 +2,7 @@ package importer.search
 
 import java.io.{FileOutputStream, File}
 import java.util.zip.ZipFile
-import importer.models._
+import models._
 import org.joda.time.LocalDate
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -65,6 +65,15 @@ object Search {
             seriesName: String = (series \\ "SeriesName").text
             description: String = (series \\ "Overview").text
             banner: String = (series \\ "banner").text
+            active: Option[Boolean] = {
+              val status = (series \\ "Status").text
+              if (status == "Continuing")
+                Some(true)
+              else if (status == "Ended")
+                Some(false)
+              else
+                None
+            }
           } yield {
             val episodes = for {
               episode <- xml \\ "Episode"
@@ -73,9 +82,13 @@ object Search {
               seasonNumber: String = (episode \\ "SeasonNumber").text
               episodeName: String = (episode \\ "EpisodeName").text
               localDateString: String = (episode \\ "FirstAired").text
-              localDate: LocalDate = {
+              localDate: Option[LocalDate] = {
                 val dateArray = localDateString.split("-")
-                  new LocalDate(dateArray(0).toInt, dateArray(1).toInt, dateArray(2).toInt)
+                try {
+                  Some(new LocalDate(dateArray(0).toInt, dateArray(1).toInt, dateArray(2).toInt))
+                } catch {
+                  case _: NumberFormatException => None
+                }
               }
             } yield {
               TvEpisode(
@@ -96,6 +109,7 @@ object Search {
               seriesId = SeriesID(seriesIDString.toLong),
               seriesName = seriesName,
               description = description,
+              active = active,
               banner = s"http://thetvdb.com/banners/$banner",
               seasons = seasons.sortBy(_.seasonNumber)
             )
